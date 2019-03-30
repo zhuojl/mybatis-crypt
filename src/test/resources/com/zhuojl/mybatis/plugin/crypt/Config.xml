@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+    PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<configuration>
+
+  <plugins>
+    <plugin interceptor="com.zhuojl.mybatis.plugin.crypt.CryptInterceptor">
+      <property name="encryptWithOutAnnotation" value="true"/>
+      <property name="decryptWithOutAnnotation" value="true"/>
+    </plugin>
+  </plugins>
+
+  <environments default="development">
+    <environment id="development">
+      <transactionManager type="JDBC"></transactionManager>
+      <dataSource type="UNPOOLED">
+        <property name="driver" value="org.hsqldb.jdbcDriver" />
+        <property name="url" value="jdbc:hsqldb:mem:batch_keys" />
+        <property name="username" value="sa" />
+      </dataSource>
+    </environment>
+  </environments>
+
+  <mappers>
+    <mapper resource="com/zhuojl/mybatis/plugin/crypt/Mapper.xml" />
+  </mappers>
+
+</configuration>
