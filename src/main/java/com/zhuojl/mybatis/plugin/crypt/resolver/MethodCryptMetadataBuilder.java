@@ -4,26 +4,25 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.apache.ibatis.annotations.Param;
 
 import com.zhuojl.mybatis.plugin.crypt.CryptUtil;
 import com.zhuojl.mybatis.plugin.crypt.annotation.CryptField;
-import com.zhuojl.mybatis.plugin.crypt.MethodCryptMetaData;
 import com.zhuojl.mybatis.plugin.crypt.exception.MyRuntimeException;
 
 /**
- * 方法签名工具类
+ * MethodCryptMetadata 的建造者
  *
  * @author junliang.zhuo
  * @date 2019-03-29 13:40
  */
-
-
 public class MethodCryptMetadataBuilder {
+
+    private static final MethodEncryptResolver EMPTY_ENCRYPT_RESOLVER = new EmptyMethodEncryptResolver();
+    private static final MethodDecryptResolver EMPTY_DECRYPT_RESOLVER = new EmptyMethodDecryptResolver();
 
     private String statementId;
     private Boolean encryptWithOutAnnotation;
@@ -35,21 +34,15 @@ public class MethodCryptMetadataBuilder {
         this.decryptWithOutAnnotation = decryptWithOutAnnotation;
     }
 
-    private static final EncryptResolver EMPTY_ENCRYPT_RESOLVER = new EmptyEncryptResolver();
-    private static final DecryptResolver EMPTY_DECRYPT_RESOLVER = new EmptyDecryptResolver();
-
-    /**
-     * 理想情况下，参数/结果需要加解密，都必须要加注解才行，但是实际情况是，项目中基本都会封装基本的增删该查，而且不会有Param注解， 所以对不可能对全部的增删改查方法去加注解，还得改xml。所以会特殊区分实体bean和List<bean>的参数，避免改动太大。
-     */
-    public MethodCryptMetaData build() {
-        MethodCryptMetaData methodCryptMetaData = new MethodCryptMetaData();
+    public MethodCryptMetadata build() {
+        MethodCryptMetadata methodCryptMetadata = new MethodCryptMetadata();
         Method m = getMethod();
-        methodCryptMetaData.encryptResolver = buildEncryptResolver(m);
-        methodCryptMetaData.decryptResolver = buildDecryptResolver(m);
-        return methodCryptMetaData;
+        methodCryptMetadata.methodEncryptResolver = buildEncryptResolver(m);
+        methodCryptMetadata.methodDecryptResolver = buildDecryptResolver(m);
+        return methodCryptMetadata;
     }
 
-    private EncryptResolver buildEncryptResolver(Method m) {
+    private MethodEncryptResolver buildEncryptResolver(Method m) {
         if (m == null) {
             return EMPTY_ENCRYPT_RESOLVER;
         }
@@ -58,30 +51,25 @@ public class MethodCryptMetadataBuilder {
         if (parameters == null || parameters.length == 0) {
             return EMPTY_ENCRYPT_RESOLVER;
         }
-        List<Parameter> parametersWithoutSpecial = Arrays.stream(parameters)
-            .filter(parameter -> parameter.getType() != null)
-            .collect(Collectors.toList());
-        if (parametersWithoutSpecial == null || parametersWithoutSpecial.size() == 0) {
-            return EMPTY_ENCRYPT_RESOLVER;
-        }
         // 方法有加密注解的参数
-        List<MethodCryptParameter> methodEncryptParamList = getCryptParams(m);
+        List<MethodAnnotationEncryptParameter> methodEncryptParamList = getCryptParams(m);
 
-        if (decryptWithOutAnnotation && methodEncryptParamList.size() == 0) {
+        if (encryptWithOutAnnotation && methodEncryptParamList.size() == 0) {
             // 如果有多个参数
-            if (parametersWithoutSpecial.size() == 0) {
+            if (parameters.length == 0) {
                 return EMPTY_ENCRYPT_RESOLVER;
             }
+
             // 只有一个参数时间
-            return new SimpleEncryptResolver();
+            return new SimpleMethodEncryptResolver();
         }
         if (methodEncryptParamList.size() > 0) {
-            return new ListEncryptResolver(methodEncryptParamList);
+            return new AnnotationMethodEncryptResolver(methodEncryptParamList);
         }
         return EMPTY_ENCRYPT_RESOLVER;
     }
 
-    private DecryptResolver buildDecryptResolver(Method m) {
+    private MethodDecryptResolver buildDecryptResolver(Method m) {
         if (m == null) {
             return EMPTY_DECRYPT_RESOLVER;
         }
@@ -91,19 +79,19 @@ public class MethodCryptMetadataBuilder {
         }
         final CryptField cryptField = m.getAnnotation(CryptField.class);
 
-        if (encryptWithOutAnnotation || cryptField != null) {
-            return new SimpleDecryptResolver(cryptField);
+        if (decryptWithOutAnnotation || cryptField != null) {
+            return new SimpleMethodDecryptResolver(cryptField);
         }
 
         return EMPTY_DECRYPT_RESOLVER;
     }
 
-    private static List<MethodCryptParameter> getCryptParams(Method m) {
+    private List<MethodAnnotationEncryptParameter> getCryptParams(Method m) {
         Parameter[] parameters = m.getParameters();
         if (parameters == null || parameters.length == 0) {
             return new ArrayList<>();
         }
-        List<MethodCryptParameter> paramList = new ArrayList<>();
+        List<MethodAnnotationEncryptParameter> paramList = new ArrayList<>();
         final Annotation[][] paramAnnotations = m.getParameterAnnotations();
         // get names from @CryptField annotations
         // 这里必须要配合Param注解一起使用，因为需要参数名称
@@ -125,14 +113,38 @@ public class MethodCryptMetadataBuilder {
                     param = (Param) annotation;
                 }
                 if (crypt != null && param != null) {
-                    paramList.add(new MethodCryptParameter(param.value(), crypt, parameters[i].getType()));
+                    paramList.add(new MethodAnnotationEncryptParameter(param.value(), crypt, parameters[i].getType()));
                     break;
                 }
             }
             crypt = null;
             param = null;
         }
+
+        // 如果没有注解加密，如果默认加密，且只有一个参数，且是list，array， collection，相当于加了注解
+        if (paramList.size() == 0 && encryptWithOutAnnotation && parameters.length == 1) {
+            String name;
+            if (parameters[0].getType().isAssignableFrom(List.class)) {
+                name = getParameterNameOrDefault(paramAnnotations[0], "list");
+                paramList.add(new MethodAnnotationEncryptParameter(name, null, parameters[0].getType()));
+            } else if (parameters[0].getType().isAssignableFrom(Collection.class)) {
+                name = getParameterNameOrDefault(paramAnnotations[0], "collection");
+                paramList.add(new MethodAnnotationEncryptParameter(name, null, parameters[0].getType()));
+            } else if (parameters[0].getType().isArray()) {
+                name = getParameterNameOrDefault(paramAnnotations[0], "array");
+                paramList.add(new MethodAnnotationEncryptParameter(name, null, parameters[0].getType()));
+            }
+        }
         return paramList;
+    }
+
+    private String getParameterNameOrDefault(Annotation[] annotations, String defaultName) {
+        for (Annotation annotation : annotations) {
+            if (annotation instanceof Param) {
+                return ((Param)annotation).value();
+            }
+        }
+        return defaultName;
     }
 
 

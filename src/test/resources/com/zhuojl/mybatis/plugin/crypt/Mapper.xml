@@ -24,33 +24,51 @@
   <!--<cache eviction="LRU"/>-->
 
   <insert id="insert">
-    insert into users values(#{id}, #{name})
+    insert into users values(#{id}, #{name}, #{phone})
   </insert>
 
-  <select id="testUserParamIndex" resultType="com.zhuojl.mybatis.plugin.crypt.User" >
-    select id, name from users where id = #{param1} and name = #{param2}
-
-  </select>
-
-  <select id="testSingleParam" resultType="com.zhuojl.mybatis.plugin.crypt.User" >
-  	select id, name from users where id = #{idName}
-  </select>
-
-  <select id="testMultiParamNoAnnotation" resultType="com.zhuojl.mybatis.plugin.crypt.User" >
-  	select id, name from users where id = #{id} and name = #{name}
-  </select>
-
-  <select id="testUseListMethod" resultType="com.zhuojl.mybatis.plugin.crypt.User" >
-  	select id, name from users
-    where id = #{list.size}
-  </select>
-
-  <select id="testForeach" resultType="com.zhuojl.mybatis.plugin.crypt.User" >
-  	select id, name from users
-    where id in
-    <foreach collection="list" open="(" close=")" item="id" separator=",">
-      #{id}
+  <insert id="batchInsert">
+    insert into users values
+    <foreach collection="list" open="" close="" item="item" separator=",">
+      (#{item.id}, #{item.name}, #{item.phone})
     </foreach>
+  </insert>
+
+  <insert id="batchInsertArray">
+    insert into users values
+    <foreach collection="arrayName" open="" close="" item="item" separator=",">
+      (#{item.id}, #{item.name}, #{item.phone})
+    </foreach>
+  </insert>
+
+  <select id="listUserWithMultipleParam" resultType="com.zhuojl.mybatis.plugin.crypt.User">
+    SELECT * from users
+    WHERE
+    name = #{user1.name} OR name = #{user2.name} OR name in
+    <foreach collection="userList" open="(" close=")" item="item" separator=",">
+      #{item.name}
+    </foreach>
+
   </select>
+
+  <select id="listAll" resultType="com.zhuojl.mybatis.plugin.crypt.User">
+    SELECT * FROM users
+  </select>
+
+  <select id="listAllUserWithAnnotation" resultType="com.zhuojl.mybatis.plugin.crypt.User" >
+  	select * from users
+  </select>
+
+  <select id="get" resultType="com.zhuojl.mybatis.plugin.crypt.User" >
+  	select * from users limit 1
+  </select>
+
+  <select id="getWithAnnotation" resultType="com.zhuojl.mybatis.plugin.crypt.User" >
+  	select * from users limit 1
+  </select>
+
+  <delete id="deleteAll">
+    delete from users
+  </delete>
 
 </mapper>

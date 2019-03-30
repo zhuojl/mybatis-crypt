@@ -1,20 +1,20 @@
 package com.zhuojl.mybatis.plugin.crypt.resolver;
 
 import com.zhuojl.mybatis.plugin.crypt.annotation.CryptField;
-import com.zhuojl.mybatis.plugin.crypt.paramhandler.CryptHandlerFactory;
+import com.zhuojl.mybatis.plugin.crypt.handler.CryptHandlerFactory;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * TODO
+ * 简单解密处理者
  *
  * @author junliang.zhuo
  * @date 2019-03-29 13:12
  */
 @Getter
 @AllArgsConstructor
-public class SimpleDecryptResolver implements DecryptResolver {
+public class SimpleMethodDecryptResolver implements MethodDecryptResolver {
 
     private CryptField cryptField;
 

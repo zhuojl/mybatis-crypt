@@ -1,30 +1,31 @@
-package com.zhuojl.mybatis.plugin.crypt.paramhandler;
+package com.zhuojl.mybatis.plugin.crypt.handler;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.stream.Collectors;
 
 import com.zhuojl.mybatis.plugin.crypt.annotation.CryptField;
 
 /**
- * TODO
+ * * 处理 Collection 对象的加解密
  *
  * @author junliang.zhuo
  * @date 2019-03-29 11:40
  */
-public class ListCryptHandler implements CryptHandler<List> {
+public class CollectionCryptHandler implements CryptHandler<Collection> {
+
 
     @Override
-    public Object encrypt(List list, CryptField cryptField) {
-        if (!needCrypt(list)) {
-            return list;
+    public Object encrypt(Collection collection, CryptField cryptField) {
+        if (!needCrypt(collection)) {
+            return collection;
         }
-        return list.stream()
+        return collection.stream()
             .map(item -> CryptHandlerFactory.getCryptHandler(item, cryptField).encrypt(item, cryptField))
             .collect(Collectors.toList());
     }
 
     @Override
-    public Object decrypt(List param, CryptField cryptField) {
+    public Object decrypt(Collection param, CryptField cryptField) {
         if (!needCrypt(param)) {
             return param;
         }
@@ -33,7 +34,8 @@ public class ListCryptHandler implements CryptHandler<List> {
             .collect(Collectors.toList());
     }
 
-    private boolean needCrypt(List list) {
-        return list != null && list.size() != 0;
+
+    private boolean needCrypt(Collection collection) {
+        return collection != null && collection.size() != 0;
     }
 }

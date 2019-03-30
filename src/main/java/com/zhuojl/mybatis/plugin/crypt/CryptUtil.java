@@ -4,7 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * TODO
+ * 加解密工具类
  *
  * @author junliang.zhuo
  * @date 2019-03-29 12:49

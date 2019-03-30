@@ -1,4 +1,4 @@
-package com.zhuojl.mybatis.plugin.crypt.paramhandler;
+package com.zhuojl.mybatis.plugin.crypt.handler;
 
 import java.util.Collection;
 import java.util.List;
@@ -8,7 +8,7 @@ import com.zhuojl.mybatis.plugin.crypt.CryptUtil;
 import com.zhuojl.mybatis.plugin.crypt.annotation.CryptField;
 
 /**
- * TODO
+ * 加解密处理者工厂类
  *
  * @author junliang.zhuo
  * @date 2019-03-29 13:02

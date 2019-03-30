@@ -6,10 +6,10 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import com.zhuojl.mybatis.plugin.crypt.type.TypeEnum;
+import com.zhuojl.mybatis.plugin.crypt.executor.CryptType;
 
 /**
- * TODO
+ * 加解密注解
  *
  * @author junliang.zhuo
  * @date 2019-03-29 14:49
@@ -19,7 +19,7 @@ import com.zhuojl.mybatis.plugin.crypt.type.TypeEnum;
 @Target({ElementType.FIELD, ElementType.PARAMETER, ElementType.METHOD})
 public @interface CryptField {
 
-    TypeEnum value() default TypeEnum.NAME;
+    CryptType value() default CryptType.NAME;
 
     boolean encrypt() default true;
 

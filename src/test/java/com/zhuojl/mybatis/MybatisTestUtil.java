@@ -16,7 +16,7 @@ import org.apache.ibatis.jdbc.ScriptRunner;
  * @author junliang.zhuo
  * @date 2019-03-30 15:19
  */
-public class BaseTest {
+public class MybatisTestUtil {
 
     public static void runScript(DataSource ds, String resource) throws IOException, SQLException {
         try (Connection connection = ds.getConnection()) {

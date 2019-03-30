@@ -14,20 +14,32 @@ package com.zhuojl.mybatis.plugin.crypt;
 
 import java.util.List;
 
+import org.apache.ibatis.annotations.Param;
+
 import com.zhuojl.mybatis.plugin.crypt.annotation.CryptField;
 
 public interface Mapper {
 
     void insert(User user);
 
-    List<User> testUserParamIndex(Integer id, String name);
+    void batchInsert(List<User> user);
+
+    void batchInsertArray(@Param("arrayName") User[] user);
+
+    List<User> listUserWithMultipleParam(@Param("user1") User user1, @Param("user2") User user2,
+        @Param("userList") @CryptField List<User> userList);
+
+
 
     @CryptField
-    List<User> testSingleParam(Integer idName);
+    User getWithAnnotation(Integer id);
 
-    List<User> testMultiParamNoAnnotation(Integer id, String name);
+    User get(Integer id);
 
-    List<User> testUseListMethod(List<Integer> list);
+    @CryptField
+    User[] listAllUserWithAnnotation();
 
-    List<User> testForeach(List<Integer> list);
+    List<User> listAll();
+
+    void deleteAll();
 }

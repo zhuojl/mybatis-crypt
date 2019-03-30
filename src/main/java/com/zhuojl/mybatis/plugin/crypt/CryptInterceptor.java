@@ -13,10 +13,14 @@ import org.apache.ibatis.plugin.Signature;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
 
+import com.zhuojl.mybatis.plugin.crypt.resolver.MethodCryptMetadata;
 import com.zhuojl.mybatis.plugin.crypt.resolver.MethodCryptMetadataBuilder;
 
 /**
- * 项目：mybatis-crypt 包名：org.apache.ibatis.plugin 功能：数据库数据脱敏 加解密算法推荐：aes192 + base64 时间：2017-11-22 作者：miaoxw
+ * 加解密插件
+ *
+ * @author junliang.zhuo
+ * @date 2019-03-28 12:49
  */
 @Intercepts({
     @Signature(type = Executor.class, method = "update", args = {MappedStatement.class, Object.class}),
@@ -33,21 +37,24 @@ public class CryptInterceptor implements Interceptor {
      */
     private Boolean decryptWithOutAnnotation;
 
-    private static final ConcurrentHashMap<String, MethodCryptMetaData> METHOD_ENCRYPT_MAP = new ConcurrentHashMap<>();
+    /**
+     * XXX 设置为public 主要是因为 多个单元测试之间类静态变量共享，需要清缓存
+     */
+    public static final ConcurrentHashMap<String, MethodCryptMetadata> METHOD_ENCRYPT_MAP = new ConcurrentHashMap<>();
 
     @Override
     public Object intercept(Invocation invocation) throws Throwable {
         Object[] args = invocation.getArgs();
-        MethodCryptMetaData methodCryptMetaData = getCachedMethodCryptMetaData((MappedStatement) args[0]);
+        MethodCryptMetadata methodCryptMetadata = getCachedMethodCryptMetaData((MappedStatement) args[0]);
         // 加密
-        args[1] = methodCryptMetaData.encrypt(args[1]);
+        args[1] = methodCryptMetadata.encrypt(args[1]);
         // 获得出参
         Object returnValue = invocation.proceed();
         // 解密
-        return methodCryptMetaData.decrypt(returnValue);
+        return methodCryptMetadata.decrypt(returnValue);
     }
 
-    private MethodCryptMetaData getCachedMethodCryptMetaData(MappedStatement mappedStatement) {
+    private MethodCryptMetadata getCachedMethodCryptMetaData(MappedStatement mappedStatement) {
         return METHOD_ENCRYPT_MAP.computeIfAbsent(mappedStatement.getId(), id ->
             new MethodCryptMetadataBuilder(id, encryptWithOutAnnotation, decryptWithOutAnnotation).build()
         );
@@ -64,11 +71,4 @@ public class CryptInterceptor implements Interceptor {
         decryptWithOutAnnotation = Boolean.valueOf(properties.getProperty("decryptWithOutAnnotation", "false"));
     }
 
-    public void setEncryptWithOutAnnotation(boolean encryptWithOutAnnotation) {
-        this.encryptWithOutAnnotation = encryptWithOutAnnotation;
-    }
-
-    public void setDecryptWithOutAnnotation(boolean decryptWithOutAnnotation) {
-        this.decryptWithOutAnnotation = decryptWithOutAnnotation;
-    }
 }

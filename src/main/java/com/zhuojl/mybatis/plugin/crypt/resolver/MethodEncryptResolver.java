@@ -1,13 +1,12 @@
 package com.zhuojl.mybatis.plugin.crypt.resolver;
 
 /**
- * TODO
+ * 方法加密处理者
  *
  * @author junliang.zhuo
  * @date 2019-03-30 13:36
  */
-public interface DecryptResolver {
+public interface MethodEncryptResolver {
 
-    Object processDecrypt(Object param);
-
+    Object processEncrypt(Object param);
 }

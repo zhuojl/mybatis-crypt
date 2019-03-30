@@ -1,10 +1,10 @@
-package com.zhuojl.mybatis.plugin.crypt.paramhandler;
+package com.zhuojl.mybatis.plugin.crypt.handler;
 
 import com.zhuojl.mybatis.plugin.crypt.annotation.CryptField;
-import com.zhuojl.mybatis.plugin.crypt.type.TypeHandlerFactory;
+import com.zhuojl.mybatis.plugin.crypt.executor.CryptExecutorFactory;
 
 /**
- * TODO
+ * 处理 String 对象的加解密
  *
  * @author junliang.zhuo
  * @date 2019-03-29 11:40
@@ -15,7 +15,7 @@ public class StringCryptHandler implements CryptHandler<String> {
     @Override
     public Object encrypt(String param, CryptField cryptField) {
         if (needCrypt(param, cryptField)) {
-            String encrypt = TypeHandlerFactory.getTypeHandler(cryptField).encrypt(param);
+            String encrypt = CryptExecutorFactory.getTypeHandler(cryptField).encrypt(param);
             System.out.println(this.getClass().getSimpleName() + " :crypt: " + param + " : " + encrypt);
             return encrypt;
         }
@@ -29,7 +29,7 @@ public class StringCryptHandler implements CryptHandler<String> {
     @Override
     public Object decrypt(String param, CryptField cryptField) {
         if (needCrypt(param, cryptField)) {
-            String decrypt = TypeHandlerFactory.getTypeHandler(cryptField).decrypt(param);
+            String decrypt = CryptExecutorFactory.getTypeHandler(cryptField).decrypt(param);
             System.out.println(this.getClass().getSimpleName() + " :decrypt: " + param + " : " + decrypt);
             return decrypt;
         }

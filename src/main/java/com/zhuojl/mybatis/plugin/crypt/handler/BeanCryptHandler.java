@@ -1,15 +1,17 @@
-package com.zhuojl.mybatis.plugin.crypt.paramhandler;
+package com.zhuojl.mybatis.plugin.crypt.handler;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.beanutils.BeanUtils;
+
 import com.zhuojl.mybatis.plugin.crypt.annotation.CryptField;
 import com.zhuojl.mybatis.plugin.crypt.exception.MyRuntimeException;
 
 /**
- * TODO
+ * * 处理 bean 实体的加解密
  *
  * @author junliang.zhuo
  * @date 2019-03-29 11:40
@@ -21,17 +23,33 @@ public class BeanCryptHandler implements CryptHandler<Object> {
 
     @Override
     public Object encrypt(Object bean, CryptField cryptField) {
-        List<CryptFiled> filedList = CLASS_ENCRYPT_MAP.computeIfAbsent(bean.getClass(), this::getEncryptFields);
+        if (bean == null) {
+            return null;
+        }
+        Object result;
+        try {
+            // XXX 对bean的所有操作，会影响本地数据，可能存在重复加密的情况，
+            // 需要clone成新bean，必须要有默认构造器
+            result = BeanUtils.cloneBean(bean);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new MyRuntimeException();
+        }
+        List<CryptFiled> filedList = CLASS_ENCRYPT_MAP.computeIfAbsent(result.getClass(), this::getEncryptFields);
         filedList.forEach(cryptFiled -> {
             try {
                 cryptFiled.field.setAccessible(true);
-                Object obj = cryptFiled.field.get(bean);
-                cryptFiled.field.set(bean, CryptHandlerFactory.getCryptHandler(obj, cryptFiled.cryptField).encrypt(obj, cryptFiled.cryptField));
+                Object obj = cryptFiled.field.get(result);
+                if (obj != null) {
+                    Object encrypted = CryptHandlerFactory.getCryptHandler(obj, cryptFiled.cryptField).encrypt(obj, cryptFiled.cryptField);
+                    cryptFiled.field.set(result, encrypted);
+                }
             } catch (IllegalAccessException e) {
+                e.printStackTrace();
                 throw new MyRuntimeException();
             }
         });
-        return bean;
+        return result;
     }
 
     private List<CryptFiled> getEncryptFields(Class cls) {
@@ -68,13 +86,20 @@ public class BeanCryptHandler implements CryptHandler<Object> {
 
     @Override
     public Object decrypt(Object param, CryptField cryptField) {
-        List<CryptFiled> filedList = CLASS_DECRYPT_MAP.computeIfAbsent(param.getClass(), this::getEncryptFields);
+        if (param == null) {
+            return null;
+        }
+        List<CryptFiled> filedList = CLASS_DECRYPT_MAP.computeIfAbsent(param.getClass(), this::getDecryptFields);
         filedList.forEach(cryptFiled -> {
             try {
                 cryptFiled.field.setAccessible(true);
                 Object obj = cryptFiled.field.get(param);
-                cryptFiled.field.set(param, CryptHandlerFactory.getCryptHandler(obj, cryptFiled.cryptField).decrypt(obj, cryptFiled.cryptField));
+                if (obj != null) {
+                    Object decrypted = CryptHandlerFactory.getCryptHandler(obj, cryptFiled.cryptField).decrypt(obj, cryptFiled.cryptField);
+                    cryptFiled.field.set(param, decrypted);
+                }
             } catch (IllegalAccessException e) {
+                e.printStackTrace();
                 throw new MyRuntimeException();
             }
         });
