@@ -37,8 +37,8 @@ public class MethodCryptMetadataBuilder {
     public MethodCryptMetadata build() {
         MethodCryptMetadata methodCryptMetadata = new MethodCryptMetadata();
         Method m = getMethod();
-        methodCryptMetadata.methodEncryptResolver = buildEncryptResolver(m);
-        methodCryptMetadata.methodDecryptResolver = buildDecryptResolver(m);
+        methodCryptMetadata.setMethodEncryptResolver(buildEncryptResolver(m));
+        methodCryptMetadata.setMethodDecryptResolver(buildDecryptResolver(m));
         return methodCryptMetadata;
     }
 
