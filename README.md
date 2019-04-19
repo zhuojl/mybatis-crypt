@@ -44,7 +44,7 @@ public Object intercept(Invocation invocation) throws Throwable {
 
 对于解密，比加密逻辑简单，不需要像加密一样从map中获取，待解密的值就是返回结果。
 
-这是[github源码地址](https://github.com/zhuojl/mybatis-crypt)，整体逻辑可以通过这两张图有个大致了解：[类图](https://img-blog.csdnimg.cn/20190401201653585.jpg),[序列图](https://img-blog.csdnimg.cn/20190401202147382.jpg)
+整体逻辑可以通过这两张图有个大致了解：[类图](https://img-blog.csdnimg.cn/20190419204726748.jpg),[序列图](https://img-blog.csdnimg.cn/2019041920474410.jpg)
 
 # 特殊说明
 1. encryptWithOutAnnotation,decryptWithOutAnnotation可以通过插件properties修改
